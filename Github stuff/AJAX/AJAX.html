@@ -1,0 +1,233 @@
+<html>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+
+
+<head>
+    <title>Outlets</title>
+
+    <style>
+        /* table styling from w3 schools (https://www.w3schools.com/html/html_tables.asp) */
+
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td,
+        th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+
+        /* bootstrap styling for jquery auto complete */
+
+        .ui-autocomplete {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 1000;
+            float: left;
+            display: none;
+            min-width: 160px;
+            padding: 4px 0;
+            margin: 0 0 10px 25px;
+            list-style: none;
+            background-color: #ffffff;
+            border-color: #ccc;
+            border-color: rgba(0, 0, 0, 0.2);
+            border-style: solid;
+            border-width: 1px;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            border-radius: 5px;
+            -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            -webkit-background-clip: padding-box;
+            -moz-background-clip: padding;
+            background-clip: padding-box;
+            *border-right-width: 2px;
+            *border-bottom-width: 2px;
+        }
+
+        .ui-menu-item>a.ui-corner-all {
+            display: block;
+            padding: 3px 15px;
+            clear: both;
+            font-weight: normal;
+            line-height: 18px;
+            color: #555555;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .ui-state-hover,
+        .ui-state-active {
+            color: #ffffff;
+            text-decoration: none;
+            background-color: #0088cc;
+            border-radius: 0px;
+            -webkit-border-radius: 0px;
+            -moz-border-radius: 0px;
+            background-image: none;
+        }
+
+        .ui-helper-hidden-accessible {
+            display: none;
+        }
+    </style>
+
+
+
+    <script>
+
+        //this is done here because of how DOM works
+        //function to get the rating as requested through the table buttons
+        function getRating(business, address) {
+            $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/rating.php?", { businessName: business }, function (result) {
+
+                //if the script returns nothing, alert that no ratings were found
+                if (jQuery.isEmptyObject(result)) {
+                    alert("No matching ratings found");
+                }
+                //otherwise create the alert
+                else {
+                    //if the results returned are more than one, build the response using the template and going through the returned values
+                    //this means that for names that would print more than one result, the user can see what address its refering to with the results printed in the alert
+                    if (result.length > 1) {
+                        var i;
+                        //this will be used to build the string
+                        var builder = "";
+                        for (i = 0; i < result.length; i++) {
+                            builder += "Name: " + result[i].businessName + " Address: " + result[i].address + " Average rating: " + result[i].avgRating + " Total number of ratings: " + result[i].totalRatings + "\n";
+                        }
+                        //do the popup with the built string
+                        alert(builder);
+                    }
+                    //if the results returned are one, then create a simple alert for the 0th position in the result array
+                    else {
+                        alert("Name: " + result[0].businessName + " Address: " + result[0].address + " Average rating: " + result[0].avgRating + " Total number of ratings: " + result[0].totalRatings)
+                    }
+                }
+            }, "json");
+        };
+
+        $(document).ready(function () {
+
+            var availableTags = [
+                "Age UK",
+                "Costa Coffee",
+                "Iceland",
+                "Subway"
+            ];
+            //autocomplete on the form
+            $("#businessName").autocomplete({
+                source: availableTags
+            });
+
+
+            //function to load the page needed, page parameter represents either 1 for initial load, or represents the button pressed
+            function loadPage(page) {
+                $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/hygiene.php", { op: "get", page: page }, function (result) {
+                    op = "get"
+                    createTable(result, op);
+                }, "json");
+            };
+
+            function doSearch(business) {
+
+                $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/hygiene.php", { op: "search", business: business }, function (result) {
+                    op = "search"
+                    createTable(result, op);
+                }, "json");
+            };
+
+            //submit the data from the form for use in the doSearch function, this is done in this way to prevent the page from reloading
+            $('#myForm').submit(function () {
+                var business = document.getElementById("businessName").value
+                doSearch(business)
+                return false;
+            });
+
+            function createTable(result, op) {
+                //empty the table of any previous content it had, this prevents the tables stacking on each other
+                $(".table1").empty();
+                //append the details of the page to the table to display it on the screen, and create the "Get Ratings"button for each row
+                $(".table1").append("<th>Business</th><th>Address</th><th>Type</th><th>Rating</th><th>Date</th><th>Get Rating</th>");
+                var i;
+                for (i = 0; i < result.length; i++) {
+                    $(".table1")
+                        .append("<tr><td>" + result[i].business + "</td>" +
+                            "<td>" + result[i].address + "</td>" +
+                            "<td>" + result[i].type + "</td>" +
+                            "<td>" + result[i].rating + "</td>" +
+                            "<td>" + result[i].date + "</td>" +
+                            "<td>" + createButtonRating(result[i].business, result[i].address, i) + "</td>" +
+                            "</tr>");
+                    if (jQuery.inArray(result[i].business, availableTags) == -1  && op == "search" ) {
+                        availableTags.push(result[i].business);
+                    }
+                }
+            }
+
+            loadPage(1); //Load the first page when the page is loaded
+
+            //create the buttons for the paginator, i parameter represents the button its creating (1 to number of pages)
+            function createButtonPaginator(i) {
+                return $('<button/>', {
+                    text: i,
+                    id: 'btn_Paginator' + i,
+                    click: function () { loadPage(i) }
+
+                });
+            }
+
+            //create the buttons in the table for using in ratings, these need to collect the business name and the address for use later
+            function createButtonRating(business, address, i) {
+                return '<button id="btn_Rating' + i + '"onclick="getRating(\'' + business + '\',\'' + address + '\')">Get Rating</button>'
+            }
+
+            //create the buttons as needed for the pages of results
+            $.get("https://www.cs.kent.ac.uk/people/staff/yh/co539_a2_data/hygiene.php", { op: "pages" }, function (result) {
+                var pages = result["pages"];
+                var i;
+
+                //go through the loop and create buttons for 1 to the number of pages, then append it to the paginator
+                for (i = 1; i <= pages; i++) {
+                    $(".paginator").append(createButtonPaginator(i));
+                };
+            }, "json");
+
+
+
+        });
+
+    </script>
+
+
+</head>
+
+<body>
+
+    <p>List of food outlets</p>
+
+    <ul class="paginator"></ul>
+
+    <table class="table1"></table>
+
+    <form action="" id="myForm" class="ui-widget">
+        Search : <input type="text" name="business" placeholder="Enter Search" id="businessName">
+        <input type="submit" value="Submit">
+    </form>
+
+</body>
+
+</html>
