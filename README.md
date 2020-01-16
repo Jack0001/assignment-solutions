@@ -5,8 +5,10 @@ More will be added as assignments are completed
 
 Currently contains:
 
-Assignment 1 - HTML/JS assignment
+HTML_1 - HTML/JS assignment
 
-JO343_CO518_1 - Java assignment
+CO518_1 - BlueJ Java assignment
 
-chasing-bombs-jo343 - Java GUI assignment
+chasing-bombs-jo343 - BlueJ Java GUI assignment
+
+Trees - BlueJ Java assignment
